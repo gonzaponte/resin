@@ -68,5 +68,6 @@
     devShell   = pkgs.mkShell {
       name     = "resin devenv";
       packages = [ python-with-packages ] ++ rust-packages ++ other-packages;
+      RUST_SRC_PATH = "${pkgs.rustup.rust-src}/lib/rustlib/src/rust/library";
     };
   }
