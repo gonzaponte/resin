@@ -44,8 +44,8 @@ fn new_filename(filename : PathBuf, index : u64) -> PathBuf {
 fn generate_random_position(r : f64) -> (f64, f64, f64) {
     let r2 = r*r;
     loop {
-        let x = r * (random::<f64>() - 0.5);
-        let y = r * (random::<f64>() - 0.5);
+        let x = 2. * r * (random::<f64>() - 0.5);
+        let y = 2. * r * (random::<f64>() - 0.5);
         if x*x + y*y < r2 {
             let z = 500f64 * random::<f64>();
             return (x, y, z);
