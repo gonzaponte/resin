@@ -26,6 +26,9 @@ pub struct Cli {
 
     #[clap(short = 'e', long)]
     pub exponent : u32,
+
+    #[clap(long, default_value = "10000")]
+    pub rmax : f64,
 }
 
 fn new_filename(filename : PathBuf, index : u64) -> PathBuf {
@@ -49,18 +52,21 @@ fn generate_random_position() -> (f64, f64, f64) {
     }
 }
 
-fn psf(x1 : f64, y1 : f64, x0 : f64, y0 : f64) -> f64 {
+fn psf(x1 : f64, y1 : f64, x0 : f64, y0 : f64, rmax2 : f64) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
     let dz = 5f64;
-    dz.powf(1.5) / (dx*dx + dy*dy + dz*dz).powf(1.5)
+    let dr2 = dx*dx + dy*dy;
+    if dr2 > rmax2 {0.} else {
+        dz.powf(1.5) / (dr2 + dz*dz).powf(1.5)
+    }
 }
 
-fn apply_psf(pos : (f64, f64, f64), sipm_pos : &Vec<(f64, f64)>) -> (f64, f64, f64, Vec<f64>) {
+fn apply_psf(pos : (f64, f64, f64), sipm_pos : &Vec<(f64, f64)>, rmax2 : f64) -> (f64, f64, f64, Vec<f64>) {
     let (x, y, z) = pos;
     let response : Vec<f64> =
     sipm_pos.iter()
-            .map(|(xs, ys)| { psf(*xs, *ys, x, y) })
+            .map(|(xs, ys)| { psf(*xs, *ys, x, y, rmax2) })
             .collect();
 
     (x, y, z, response)
@@ -94,6 +100,8 @@ fn sipm_positions() -> Vec<(f64, f64)> {
 
 fn main() -> Result<(), String> {
     let args = Cli::parse();
+    println!("{:?}", args);
+
     let filename = PathBuf::from(&args.outfile);
     std::fs::create_dir_all(filename.parent().expect("Could not access parent directory"))
         .expect("Cannot write to destination");
@@ -107,7 +115,8 @@ fn main() -> Result<(), String> {
     let nbatch = (ntot as f64 / nfile as f64).round() as u64;
     assert_eq!(nbatch * nfile, ntot, "Invalid ratio of evt_per_file and ntot");
 
-    let pb     = ProgressBar::new(nbatch);
+    let rmax2 = args.rmax * args.rmax;
+    let pb    = ProgressBar::new(nbatch);
     (0..nbatch).into_iter()
         .inspect(|_| { pb.inc(1);} )
         .map    (|i| new_filename(args.outfile.clone(), i))
@@ -115,7 +124,7 @@ fn main() -> Result<(), String> {
             let dfs : Vec<LazyFrame> =
             (0..nfile).into_iter()
                        .map     (|_  | { generate_random_position()       })
-                       .map     (|pos| { apply_psf(pos, &sipm_pos)        })
+                       .map     (|pos| { apply_psf(pos, &sipm_pos, rmax2) })
                        .map     (create_df)
                        .collect();
 
