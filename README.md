@@ -4,7 +4,7 @@ This repo holds the code for the development of a NN for reconstruction from raw
 
 At the moment no apps are defined, so you need to clone the repo
 ```
-git clone github:gonzaponte/resin.git # or git clone https://github/gonzaponte/resin.git
+git clone git@github:gonzaponte/resin.git # or git clone https://github/gonzaponte/resin.git
 cd resin
 ```
 
