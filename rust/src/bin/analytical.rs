@@ -14,7 +14,7 @@ use rayon::ThreadPoolBuilder;
 #[clap( name  = "analytical"
       , about = "Create data based on an analytical")]
 pub struct Cli {
-    #[clap(short = 'o', long, default_value = "out.parquet")]
+    #[clap(short = 'o', long, default_value = "data/out.parquet")]
     pub outfile : PathBuf,
 
     #[clap(short = 'f', long, default_value = "1000")]
