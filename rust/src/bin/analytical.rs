@@ -6,6 +6,8 @@ use polars::prelude::*;
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use rand::random;
+use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
 
 /// CLI
 #[derive(clap::Parser, Debug, Clone)]
@@ -117,7 +119,9 @@ fn main() -> Result<(), String> {
 
     let rmax2 = args.rmax * args.rmax;
     let pb    = ProgressBar::new(nbatch);
-    (0..nbatch).into_iter()
+    ThreadPoolBuilder::new().num_threads(args.threads as usize).build_global().unwrap();
+
+    (0..nbatch).into_par_iter()
         .inspect(|_| { pb.inc(1);} )
         .map    (|i| new_filename(args.outfile.clone(), i))
         .for_each(|filename| {
