@@ -119,7 +119,10 @@ fn main() -> Result<(), String> {
     let r     = 200_f64;
     let rmax2 = args.rmax * args.rmax;
     let pb    = ProgressBar::new(nbatch); pb.set_position(0);
-    ThreadPoolBuilder::new().num_threads(args.threads as usize).build_global().unwrap();
+    ThreadPoolBuilder::new()
+        .num_threads(args.threads as usize)
+        .build_global()
+        .unwrap();
 
     (0..nbatch).into_par_iter()
         .map(|i| new_filename(args.outfile.clone(), i))
