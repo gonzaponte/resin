@@ -118,13 +118,12 @@ fn main() -> Result<(), String> {
 
     let r     = 200_f64;
     let rmax2 = args.rmax * args.rmax;
-    let pb    = ProgressBar::new(nbatch);
+    let pb    = ProgressBar::new(nbatch); pb.set_position(0);
     ThreadPoolBuilder::new().num_threads(args.threads as usize).build_global().unwrap();
 
     (0..nbatch).into_par_iter()
-        .inspect(|_| { pb.inc(1);} )
-        .map    (|i| new_filename(args.outfile.clone(), i))
-        .for_each(|filename| {
+        .map(|i| new_filename(args.outfile.clone(), i))
+        .map(|filename| {
             let dfs : Vec<LazyFrame> =
             (0..nfile).into_iter()
                        .map     (|_  | { generate_random_position(r)      })
@@ -136,6 +135,8 @@ fn main() -> Result<(), String> {
 
             let mut file = File::create(filename).unwrap();
             ParquetWriter::new(&mut file).finish(&mut df).unwrap();
-        });
+        })
+        .for_each(|_| { pb.inc(1);});
+
     Ok(())
 }
