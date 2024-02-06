@@ -1,0 +1,16 @@
+# -*-Makefile-*-
+
+# Needed to make `"$@"` usable in recipes
+set positional-arguments := true
+
+debug:
+  cargo build --debug
+
+release-verbose:
+  cargo build --release
+
+release:
+  cargo build --release
+
+run *ARGS: release
+  cargo run --release --quiet -- "$@"
