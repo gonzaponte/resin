@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use clap::Parser;
 use polars::prelude::*;
@@ -33,10 +33,10 @@ pub struct Cli {
     pub rmax : f64,
 }
 
-fn new_filename(filename : PathBuf, index : u64) -> PathBuf {
-    let filename    = filename.into_os_string().into_string().unwrap();
+fn new_filename(filename : &Path, index : u64) -> PathBuf {
+    let filename    = filename.to_str().unwrap();
     let split_index = filename.rfind(".").expect("Pattern not found");
-    let (basename, extension) =  filename.split_at(split_index);
+    let (basename, extension) = filename.split_at(split_index);
     let new_file = PathBuf::from(format!("{basename}_{index}{extension}"));
     new_file
 }
@@ -103,11 +103,9 @@ fn main() -> Result<(), String> {
     let args = Cli::parse();
     println!("{:?}", args);
 
-    let filename = PathBuf::from(&args.outfile);
-    std::fs::create_dir_all(filename.parent().expect("Could not access parent directory"))
+    let filename = args.outfile;
+    std::fs::create_dir_all(&filename.parent().expect("Could not access parent directory"))
         .expect("Cannot write to destination");
-
-    new_filename(filename.clone(), 123);
 
     let sipm_pos = sipm_positions();
 
@@ -125,7 +123,7 @@ fn main() -> Result<(), String> {
         .unwrap();
 
     (0..nbatch).into_par_iter()
-        .map(|i| new_filename(args.outfile.clone(), i))
+        .map(|i| new_filename(&filename, i))
         .map(|filename| {
             let dfs : Vec<LazyFrame> =
             (0..nfile).into_iter()
