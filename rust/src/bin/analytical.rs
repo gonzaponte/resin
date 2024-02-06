@@ -14,21 +14,27 @@ use rayon::ThreadPoolBuilder;
 #[clap( name  = "analytical"
       , about = "Create data based on an analytical")]
 pub struct Cli {
+    /// Out put file
     #[clap(short = 'o', long, default_value = "data/out.parquet")]
     pub outfile : PathBuf,
 
+    /// Number of events per file
     #[clap(short = 'f', long, default_value = "1000")]
     pub evt_per_file : u64,
 
+    /// Number of threads to use
     #[clap(short = 'j', long, default_value = "4")]
     pub threads : u8,
 
+    /// Base of the total number of events in n=base**exponent
     #[clap(short = 'b', long, default_value = "10")]
     pub base : u64,
 
+    /// Exponent of the total number of events in n=base**exponent
     #[clap(short = 'e', long)]
     pub exponent : u32,
 
+    /// Maximum radius for PSF application in mm
     #[clap(long, default_value = "10000")]
     pub rmax : f64,
 }
