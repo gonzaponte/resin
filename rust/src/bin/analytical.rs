@@ -41,8 +41,7 @@ fn new_filename(filename : PathBuf, index : u64) -> PathBuf {
     new_file
 }
 
-fn generate_random_position() -> (f64, f64, f64) {
-    let r  = 200f64;
+fn generate_random_position(r : f64) -> (f64, f64, f64) {
     let r2 = r*r;
     loop {
         let x = r * (random::<f64>() - 0.5);
@@ -117,6 +116,7 @@ fn main() -> Result<(), String> {
     let nbatch = (ntot as f64 / nfile as f64).round() as u64;
     assert_eq!(nbatch * nfile, ntot, "Invalid ratio of evt_per_file and ntot");
 
+    let r     = 200_f64;
     let rmax2 = args.rmax * args.rmax;
     let pb    = ProgressBar::new(nbatch);
     ThreadPoolBuilder::new().num_threads(args.threads as usize).build_global().unwrap();
@@ -127,7 +127,7 @@ fn main() -> Result<(), String> {
         .for_each(|filename| {
             let dfs : Vec<LazyFrame> =
             (0..nfile).into_iter()
-                       .map     (|_  | { generate_random_position()       })
+                       .map     (|_  | { generate_random_position(r)      })
                        .map     (|pos| { apply_psf(pos, &sipm_pos, rmax2) })
                        .map     (create_df)
                        .collect();
@@ -138,5 +138,4 @@ fn main() -> Result<(), String> {
             ParquetWriter::new(&mut file).finish(&mut df).unwrap();
         });
     Ok(())
-
 }
