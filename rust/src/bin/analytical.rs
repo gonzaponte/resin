@@ -41,6 +41,10 @@ pub struct Cli {
     /// Maximum radius for PSF application in mm
     #[clap(long, default_value = "10000")]
     pub rmax: f64,
+
+    /// Flag: Print SiPM positions.
+    #[clap(long, action = clap::ArgAction::SetTrue)]
+    pub print_sipm_positions: bool,
 }
 
 fn new_filename(filename : &Path, index : u64) -> PathBuf {
@@ -100,10 +104,12 @@ fn create_df(data: (f64, f64, f64, Vec<f64>)) -> LazyFrame {
     DataFrame::new(columns).unwrap().lazy()
 }
 
-fn sipm_positions() -> Vec<(f64, f64)> {
-    (0..45).cartesian_product(0..45)
-           .map(|(i, j)| {(-220 + i*10, -200 + j*10)})
-           .map(|(x, y)| {(   x as f64,    y as f64)})
+fn sipm_positions(n: usize, p: f64) -> Vec<(f64, f64)> {
+    let nf = n as f64;
+    let x0 = -( p/2. + (nf-2.)/2.*p);
+    (0..n).cartesian_product(0..n)
+           .map(|(i, j)| {( i as f64, j as f64)})
+           .map(|(i, j)| {( x0 + i*p, x0 + j*p)})
            .collect()
 }
 
@@ -117,7 +123,14 @@ fn main() -> Result<(), String> {
     std::fs::create_dir_all(&filename.parent().expect("Could not access parent directory"))
         .expect("Cannot write to destination");
 
-    let sipm_pos = sipm_positions();
+    let n = 64;
+    let p = 10.;
+    let sipm_pos = sipm_positions(n, p);
+    if args.print_sipm_positions {
+        for (x, y) in &sipm_pos {
+            println!("{x} {y}")
+        }
+    }
 
     let ntot   = args.base.pow(args.exponent);
     let nfile  = args.evt_per_file.min(ntot);
