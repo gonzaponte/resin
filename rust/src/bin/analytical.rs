@@ -16,27 +16,27 @@ use rayon::ThreadPoolBuilder;
 pub struct Cli {
     /// Out put file
     #[clap(short = 'o', long, default_value = "data/out.parquet")]
-    pub outfile : PathBuf,
+    pub outfile: PathBuf,
 
     /// Number of events per file
     #[clap(short = 'f', long, default_value = "1000")]
-    pub evt_per_file : u64,
+    pub evt_per_file: u64,
 
     /// Number of threads to use
     #[clap(short = 'j', long, default_value = "4")]
-    pub threads : u8,
+    pub threads: u8,
 
     /// Base of the total number of events in n=base**exponent
     #[clap(short = 'b', long, default_value = "10")]
-    pub base : u64,
+    pub base: u64,
 
     /// Exponent of the total number of events in n=base**exponent
     #[clap(short = 'e', long)]
-    pub exponent : u32,
+    pub exponent: u32,
 
     /// Maximum radius for PSF application in mm
     #[clap(long, default_value = "10000")]
-    pub rmax : f64,
+    pub rmax: f64,
 }
 
 fn new_filename(filename : &Path, index : u64) -> PathBuf {
@@ -59,7 +59,7 @@ fn generate_random_position(r : f64) -> (f64, f64, f64) {
     }
 }
 
-fn psf(x1 : f64, y1 : f64, x0 : f64, y0 : f64, rmax2 : f64) -> f64 {
+fn psf(x1: f64, y1: f64, x0: f64, y0: f64, rmax2: f64) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
     let dz = 5f64;
@@ -69,9 +69,9 @@ fn psf(x1 : f64, y1 : f64, x0 : f64, y0 : f64, rmax2 : f64) -> f64 {
     }
 }
 
-fn apply_psf(pos : (f64, f64, f64), sipm_pos : &Vec<(f64, f64)>, rmax2 : f64) -> (f64, f64, f64, Vec<f64>) {
+fn apply_psf(pos: (f64, f64, f64), sipm_pos: &Vec<(f64, f64)>, rmax2: f64) -> (f64, f64, f64, Vec<f64>) {
     let (x, y, z) = pos;
-    let response : Vec<f64> =
+    let response: Vec<f64> =
     sipm_pos.iter()
             .map(|(xs, ys)| { psf(*xs, *ys, x, y, rmax2) })
             .collect();
@@ -79,7 +79,7 @@ fn apply_psf(pos : (f64, f64, f64), sipm_pos : &Vec<(f64, f64)>, rmax2 : f64) ->
     (x, y, z, response)
 }
 
-fn create_df(data : (f64, f64, f64, Vec<f64>)) -> LazyFrame {
+fn create_df(data: (f64, f64, f64, Vec<f64>)) -> LazyFrame {
     let response = data.3
         .into_iter()
         .enumerate()
@@ -131,7 +131,7 @@ fn main() -> Result<(), String> {
     (0..nbatch).into_par_iter()
         .map(|i| new_filename(&filename, i))
         .map(|filename| {
-            let dfs : Vec<LazyFrame> =
+            let dfs: Vec<LazyFrame> =
             (0..nfile).into_iter()
                        .map     (|_  | { generate_random_position(r)      })
                        .map     (|pos| { apply_psf(pos, &sipm_pos, rmax2) })
