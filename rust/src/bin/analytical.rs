@@ -34,6 +34,10 @@ pub struct Cli {
     #[clap(short = 'e', long)]
     pub exponent: u32,
 
+    /// Exponent of the total number of events in n=base**exponent
+    #[clap(short = 's', long, default_value = "0")]
+    pub offset: u64,
+
     /// Maximum radius for PSF application in mm
     #[clap(long, default_value = "10000")]
     pub rmax: f64,
@@ -129,7 +133,7 @@ fn main() -> Result<(), String> {
         .unwrap();
 
     (0..nbatch).into_par_iter()
-        .map(|i| new_filename(&filename, i))
+        .map(|i| new_filename(&filename, i + args.offset))
         .map(|filename| {
             let dfs: Vec<LazyFrame> =
             (0..nfile).into_iter()
