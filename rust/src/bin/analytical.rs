@@ -59,7 +59,7 @@ fn new_filename(filename : &Path, index : u64) -> PathBuf {
     new_file
 }
 
-fn generate_random_position(r : f64) -> (f64, f64, f64) {
+fn generate_random_position(r: f64) -> (f64, f64, f64) {
     let r2 = r*r;
     loop {
         let x = 2. * r * (random::<f64>() - 0.5);
@@ -71,21 +71,22 @@ fn generate_random_position(r : f64) -> (f64, f64, f64) {
     }
 }
 
-fn psf(x1: f64, y1: f64, x0: f64, y0: f64, drmax2: f64) -> f64 {
+fn psf(x1: f64, y1: f64, x0: f64, y0: f64, rmax2: f64, drmax2: f64) -> f64 {
+    if  x0*x0 + y0*y0 > rmax2 { return 0_f64; }
     let dx = x1 - x0;
     let dy = y1 - y0;
     let dz = 5f64;
     let dr2 = dx*dx + dy*dy;
-    if dr2 > drmax2 {0.} else {
-        dz.powf(1.5) / (dr2 + dz*dz).powf(1.5)
-    }
+    if dr2 > drmax2 { return 0.}
+
+    dz.powf(1.5) / (dr2 + dz*dz).powf(1.5)
 }
 
-fn apply_psf(pos: (f64, f64, f64), sipm_pos: &Vec<(f64, f64)>, drmax2: f64) -> (f64, f64, f64, Vec<f64>) {
+fn apply_psf(pos: (f64, f64, f64), sipm_pos: &Vec<(f64, f64)>, rmax2: f64, drmax2: f64) -> (f64, f64, f64, Vec<f64>) {
     let (x, y, z) = pos;
     let response: Vec<f64> =
-    sipm_pos.iter()
-            .map(|(xs, ys)| { psf(*xs, *ys, x, y, drmax2) })
+        sipm_pos.iter()
+            .map(|(xs, ys)| { psf(*xs, *ys, x, y, rmax2, drmax2) })
             .collect();
 
     (x, y, z, response)
@@ -142,6 +143,7 @@ fn main() -> Result<(), String> {
     assert_eq!(nbatch * nfile, ntot, "Invalid ratio of evt_per_file and ntot");
 
     let r      = args.r;
+    let  rmax2 = r * r;
     let drmax2 = args.drmax * args.drmax;
     let pb     = ProgressBar::new(nbatch); pb.set_position(0);
     ThreadPoolBuilder::new()
@@ -154,8 +156,8 @@ fn main() -> Result<(), String> {
         .map(|filename| {
             let dfs: Vec<LazyFrame> =
             (0..nfile).into_iter()
-                       .map     (|_  | { generate_random_position(r)       })
-                       .map     (|pos| { apply_psf(pos, &sipm_pos, drmax2) })
+                       .map     (|_  | { generate_random_position(r)              })
+                       .map     (|pos| { apply_psf(pos, &sipm_pos, rmax2, drmax2) })
                        .map     (create_df)
                        .collect();
 
