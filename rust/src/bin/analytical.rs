@@ -156,10 +156,10 @@ fn main() -> Result<(), String> {
         .map(|filename| {
             let dfs: Vec<LazyFrame> =
             (0..nfile).into_iter()
-                       .map     (|_  | { generate_random_position(r)              })
-                       .map     (|pos| { apply_psf(pos, &sipm_pos, rmax2, drmax2) })
-                       .map     (create_df)
-                       .collect();
+                      .map     (|_  | { generate_random_position(r)              })
+                      .map     (|pos| { apply_psf(pos, &sipm_pos, rmax2, drmax2) })
+                      .map     (create_df)
+                      .collect();
 
             let mut df = concat(&dfs, UnionArgs::default()).unwrap().collect().unwrap();
 
