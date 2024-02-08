@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
       , about = "Create data based on an analytical")]
 pub struct Cli {
     /// Out put file
-    #[clap(short = 'o', long, default_value = "data/out.parquet")]
+    #[clap(short = 'o', long, default_value = "data/test/out.parquet")]
     pub outfile: PathBuf,
 
     /// Number of events per file
