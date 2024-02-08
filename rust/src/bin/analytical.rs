@@ -70,9 +70,9 @@ fn generate_random_position(full_width: f64) -> Point {
 /// Evaluates the PSF at p1 with origin at p0
 fn psf(p1: Point, p0: Point) -> f64 {
     let dp = p1 - p0;
-    let dz = 5_f64;
+    let dz2 = 5_f64.powi(2);
 
-    dz.powf(1.5) / (dp.r2() + dz*dz).powf(1.5)
+    dz2.powf(1.5) / (dp.r2() + dz2).powf(1.5)
 }
 
 /// Applies the PSF with origin at p0 to each point in sipm_pos.
