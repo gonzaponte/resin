@@ -1,5 +1,5 @@
 [package]
-name    = "RESIN"
+name    = "resin"
 version = "0.0.0"
 authors = ["Gonzalo Martinez Lema <gonzaloml@post.bgu.ac.il"]
 edition = "2021"
