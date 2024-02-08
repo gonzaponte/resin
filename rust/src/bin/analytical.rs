@@ -6,7 +6,7 @@ use indicatif::ProgressBar;
 use itertools::Itertools;
 use rand::random;
 //use rayon::prelude::*;
-use rayon::ThreadPoolBuilder;
+//use rayon::ThreadPoolBuilder;
 
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -49,6 +49,8 @@ pub struct Cli {
     pub print_sipm_positions: bool,
 }
 
+/// Generate a new filename by appending _{index} before the file
+/// extension
 fn new_filename(filename: &Path, index: u64) -> PathBuf {
     let filename    = filename.to_str().unwrap();
     let split_index = filename.rfind(".").expect("Pattern not found");
@@ -57,12 +59,15 @@ fn new_filename(filename: &Path, index: u64) -> PathBuf {
     new_file
 }
 
+/// Generates a position in the range [-half_range, half_range) in
+/// each dimension
 fn generate_random_position(half_range: f64) -> Point {
     let x = half_range * (random::<f64>() - 0.5);
     let y = half_range * (random::<f64>() - 0.5);
     Point{x, y}
 }
 
+/// Evaluates the PSF at p1 with origin at p0
 fn psf(p1: Point, p0: Point) -> f64 {
     let dp = p1 - p0;
     let dz = 5_f64;
@@ -70,23 +75,26 @@ fn psf(p1: Point, p0: Point) -> f64 {
     dz.powf(1.5) / (dp.r2() + dz*dz).powf(1.5)
 }
 
-
-fn apply_psf(p0: Point, refp: Point, sipm_pos: &Vec<Point>, rmax2: f64) -> Vec<f64> {
+/// Applies the PSF with origin at p0 to each point in sipm_pos.
+/// Points falling outside of a circle with r2=rmax2 after applying
+/// the translation trans are set to 0.
+fn apply_psf(p0: Point, sipm_pos: &Vec<Point>, trans: Point, rmax2: f64) -> Vec<f64> {
     let mut response: Vec<f64> =
         sipm_pos.iter()
                 .map(|&ps| {
-                    if   (ps + refp).r2() < rmax2 { psf(ps, p0) }
-                    else                          {      0_f64  }
+                    if   (ps + trans).r2() < rmax2 { psf(ps, p0) }
+                    else                           {      0_f64  }
                 })
                 .collect();
 
-    response.insert(0, p0.y + refp.y);
-    response.insert(0, p0.x + refp.x);
+    response.insert(0, p0.y + trans.y);
+    response.insert(0, p0.x + trans.x);
     response.insert(0, p0.y);
     response.insert(0, p0.x);
     response
 }
 
+/// Transform sequences of rows into a DataFrame
 fn create_df(data: Vec<Vec<f64>>, names: &Vec<String>) -> DataFrame {
     let get_field = |i| {
         data.iter()
@@ -103,6 +111,8 @@ fn create_df(data: Vec<Vec<f64>>, names: &Vec<String>) -> DataFrame {
     DataFrame::new(columns).unwrap()
 }
 
+/// Generate the array of sipms based on the number of sipms per side
+/// n and the pitch p
 fn sipm_positions(n: usize, p: f64) -> Vec<Point> {
     let nf = n as f64;
     let x0 = -( p/2. + (nf-2.)/2.*p);
@@ -113,6 +123,8 @@ fn sipm_positions(n: usize, p: f64) -> Vec<Point> {
            .collect()
 }
 
+/// Pick a random reference point in between 4 sipms
+/// x,y = k*pitch, where k is an integer
 fn pick_ref(p: f64, rmax: f64) -> Point {
     loop {
         let Point{mut x, mut y} = generate_random_position(rmax + p);
@@ -123,16 +135,29 @@ fn pick_ref(p: f64, rmax: f64) -> Point {
     }
 }
 
+fn get_column_names(nsipms: usize) -> Vec<String> {
+    let mut column_names = Vec::with_capacity(4 + nsipms);
+    column_names.push("x".to_string());
+    column_names.push("y".to_string());
+    column_names.push("xabs".to_string());
+    column_names.push("yabs".to_string());
+    (0..nsipms).into_iter()
+               .map(|i| format!("sipm_{i}").to_string())
+               .for_each(|name| column_names.push(name));
+
+    column_names
+}
+
 
 fn main() -> Result<(), String> {
     let args = Cli::parse();
-    println!("{:?}", args);
+    println!("Arguments passed:{:?}", args);
 
     let filename = args.outfile;
     std::fs::create_dir_all(&filename.parent().expect("Could not access parent directory"))
         .expect("Cannot write to destination");
 
-    let nsipms   = 16;
+    let nsipms   = 16; // per side, this will produce a (nsipms x nsipms) response matrix
     let pitch    = 10.;
     let sipm_pos = sipm_positions(nsipms, pitch);
     if args.print_sipm_positions {
@@ -149,19 +174,12 @@ fn main() -> Result<(), String> {
     let r  = args.r;
     let r2 = r * r;
     let pb = ProgressBar::new(nbatch); pb.set_position(0);
-    ThreadPoolBuilder::new()
-        .num_threads(args.threads as usize)
-        .build_global()
-        .unwrap();
+    // ThreadPoolBuilder::new()
+    //     .num_threads(args.threads as usize)
+    //     .build_global()
+    //     .unwrap();
 
-    let mut column_names = Vec::with_capacity(4 + nsipms);
-    column_names.push("x".to_string());
-    column_names.push("y".to_string());
-    column_names.push("xabs".to_string());
-    column_names.push("yabs".to_string());
-    (0..nsipms).into_iter()
-               .map(|i| format!("sipm_{i}").to_string())
-               .for_each(|name| column_names.push(name));
+    let column_names = get_column_names(nsipms*nsipms);
 
     (0..nbatch).into_iter()
         .map(|i| new_filename(&filename, i + args.file_offset))
@@ -170,7 +188,7 @@ fn main() -> Result<(), String> {
             (0..nfile).into_iter()
                       .map     (|_          | { (generate_random_position(pitch/2.), pick_ref(pitch, r)) })
                       .inspect (|(pos, refp)| { println!("{:?} {:?}", pos, refp)                         })
-                      .map     (|(pos, refp)| { apply_psf(pos, refp, &sipm_pos, r2)                      })
+                      .map     (|(pos, refp)| { apply_psf(pos, &sipm_pos, refp, r2)                      })
                       .collect();
 
             let mut df   = create_df(data, &column_names);
