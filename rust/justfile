@@ -6,11 +6,11 @@ set positional-arguments := true
 debug:
   cargo build --debug
 
-release-verbose:
+build:
   cargo build --release
 
-release:
-  cargo build --release
+quiet:
+  cargo build --release --quiet
 
-run *ARGS: release
+run *ARGS: quiet
   cargo run --release --quiet -- "$@"
