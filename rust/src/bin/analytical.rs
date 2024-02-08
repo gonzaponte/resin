@@ -188,7 +188,6 @@ fn main() -> Result<(), String> {
             let data: Vec<Vec<f64>> =
             (0..nfile).into_iter()
                       .map     (|_          | { (generate_random_position(pitch), pick_ref(pitch, r)) })
-                      .inspect (|(pos, refp)| { println!("{:?} {:?}", pos, refp)                      })
                       .map     (|(pos, refp)| { apply_psf(pos, &sipm_pos, refp, r2)                   })
                       .collect();
 
