@@ -61,9 +61,9 @@ fn new_filename(filename: &Path, index: u64) -> PathBuf {
 
 /// Generates a position in the range [-half_range, half_range) in
 /// each dimension
-fn generate_random_position(half_range: f64) -> Point {
-    let x = half_range * (random::<f64>() - 0.5);
-    let y = half_range * (random::<f64>() - 0.5);
+fn generate_random_position(full_width: f64) -> Point {
+    let x = full_width * (random::<f64>() - 0.5);
+    let y = full_width * (random::<f64>() - 0.5);
     Point{x, y}
 }
 
@@ -186,9 +186,9 @@ fn main() -> Result<(), String> {
         .map(|filename| {
             let data: Vec<Vec<f64>> =
             (0..nfile).into_iter()
-                      .map     (|_          | { (generate_random_position(pitch/2.), pick_ref(pitch, r)) })
-                      .inspect (|(pos, refp)| { println!("{:?} {:?}", pos, refp)                         })
-                      .map     (|(pos, refp)| { apply_psf(pos, &sipm_pos, refp, r2)                      })
+                      .map     (|_          | { (generate_random_position(pitch), pick_ref(pitch, r)) })
+                      .inspect (|(pos, refp)| { println!("{:?} {:?}", pos, refp)                      })
+                      .map     (|(pos, refp)| { apply_psf(pos, &sipm_pos, refp, r2)                   })
                       .collect();
 
             let mut df   = create_df(data, &column_names);
