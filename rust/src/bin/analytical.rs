@@ -126,10 +126,11 @@ fn sipm_positions(n: usize, p: f64) -> Vec<Point> {
 /// Pick a random reference point in between 4 sipms
 /// x,y = k*pitch, where k is an integer
 fn pick_ref(p: f64, rmax: f64) -> Point {
+    let range = 2. * (rmax + p);
     loop {
-        let Point{mut x, mut y} = generate_random_position(rmax + p);
-        x = x.div_euclid(p);
-        y = y.div_euclid(p);
+        let Point{mut x, mut y} = generate_random_position(range);
+        x = x.div_euclid(p) * p;
+        y = y.div_euclid(p) * p;
         let p = Point{x, y};
         if p.r() < rmax {return p;}
     }
