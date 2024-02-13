@@ -39,6 +39,8 @@ class NN_linear_v1(nn.Module):
 class NN_conv_v0(nn.Module):
     def __init__(self, nsipms):
         super().__init__()
+        self.nsipms_side = int(nsipms**0.5)
+
         nreco    = 2
         size     = 2**6
         self.layer1 = nn.Conv2d     (     1, size*1, 4, padding=1, dtype=torch.float64)
@@ -53,6 +55,7 @@ class NN_conv_v0(nn.Module):
         self.drop   = nn.Dropout(p=0.1)
 
     def forward(self, x):
+        nsipms_side = self.nsipms_side
         x = x.reshape(len(x), 1, nsipms_side, nsipms_side)
         x = self.pool(self.norm1(fnal.leaky_relu(self.layer1(x))))
         x = self.pool(self.norm2(fnal.leaky_relu(self.layer2(x))))
@@ -66,6 +69,7 @@ class NN_conv_v0(nn.Module):
 class NN_conv_v1(nn.Module):
     def __init__(self, nsipms):
         super().__init__()
+        self.nsipms_side = int(nsipms**0.5)
         nreco    = 2
         size     = 2**6
         self.layer1 = nn.Conv2d     (     1, size*1, 4, padding=2, dtype=torch.float64)
@@ -77,6 +81,7 @@ class NN_conv_v1(nn.Module):
         self.pool   = nn.MaxPool2d(2, 4)
 
     def forward(self, x):
+        nsipms_side = self.nsipms_side
         x = x.reshape(len(x), 1, nsipms_side, nsipms_side)
         x = self.pool(self.norm1(fnal.leaky_relu(self.layer1(x))))
         x = self.pool(self.norm2(fnal.leaky_relu(self.layer2(x))))
@@ -102,6 +107,7 @@ class NN_linear_v2(nn.Module):
 class NN_conv_v2(nn.Module):
     def __init__(self, nsipms):
         super().__init__()
+        self.nsipms_side = int(nsipms**0.5)
         self.layer1 = nn.Conv2d(     1,  16, kernel_size=3, stride=1, padding=1, dtype=torch.float64)
         self.layer2 = nn.Conv2d(    16,  32, kernel_size=3, stride=1, padding=1, dtype=torch.float64)
         self.layer3 = nn.Conv2d(    32,  64, kernel_size=3, stride=1, padding=1, dtype=torch.float64)
@@ -111,6 +117,7 @@ class NN_conv_v2(nn.Module):
         self.pool   = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 
     def forward(self, x):
+        nsipms_side = self.nsipms_side
         x = x.reshape(len(x), 1, nsipms_side, nsipms_side)
         x = self.pool(torch.relu(self.layer1(x)))
         x = self.pool(torch.relu(self.layer2(x)))
