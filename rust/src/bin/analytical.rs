@@ -105,7 +105,7 @@ fn create_df(data: Vec<Vec<f64>>, names: &Vec<String>) -> DataFrame {
     names.iter()
          .enumerate()
          .map(|(i, name)| (name, get_field(i)))
-         .map(|(name, v)| Series::new(&name, &v))
+         .map(|(name, v)| Series::new(name, &v))
          .collect();
 
     DataFrame::new(columns).unwrap()
