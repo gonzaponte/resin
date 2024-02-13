@@ -1,0 +1,7 @@
+# -*-Makefile-*-
+
+# Needed to make `"$@"` usable in recipes
+set positional-arguments := true
+
+train *ARGS:
+  python train_nn.py "$@"
