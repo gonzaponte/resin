@@ -5,8 +5,8 @@ use polars::prelude::*;
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use rand::random;
-//use rayon::prelude::*;
-//use rayon::ThreadPoolBuilder;
+use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
 
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -175,14 +175,14 @@ fn main() -> Result<(), String> {
     let r  = args.r;
     let r2 = r * r;
     let pb = ProgressBar::new(nbatch); pb.set_position(0);
-    // ThreadPoolBuilder::new()
-    //     .num_threads(args.threads as usize)
-    //     .build_global()
-    //     .unwrap();
+    ThreadPoolBuilder::new()
+        .num_threads(args.threads as usize)
+        .build_global()
+        .unwrap();
 
     let column_names = get_column_names(nsipms*nsipms);
 
-    (0..nbatch).into_iter()
+    (0..nbatch).into_par_iter()
         .map(|i| new_filename(&filename, i + args.file_offset))
         .map(|filename| {
             let data: Vec<Vec<f64>> =
