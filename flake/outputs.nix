@@ -61,7 +61,7 @@
     bacon
   ];
 
-  other-packages = with pkgs; [ just ];
+  other-packages = with pkgs; [ just qt5.wrapQtAppsHook ];
 
   in {
     # Used by `direnv` when entering this directory (also by `nix develop <URL to this flake>`)
@@ -69,5 +69,6 @@
       name     = "resin devenv";
       packages = [ python-with-packages ] ++ rust-packages ++ other-packages;
       RUST_SRC_PATH = "${pkgs.rustup.rust-src}/lib/rustlib/src/rust/library";
+      QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
     };
   }
