@@ -1,2 +1,3 @@
 .direnv
 rust/target
+nb/.ipynb_checkpoints
