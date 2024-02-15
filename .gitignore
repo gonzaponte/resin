@@ -1,3 +1,4 @@
 .direnv
 rust/target
 nb/.ipynb_checkpoints
+python/__pycache__
