@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 
 
 class DS(Dataset):
-    def __init__(self, path : Path, max_files=None):
+    def __init__(self, path : Path, max_files=None, fluctuate=False):
         self.filenames          = sorted(path.glob("*.parquet"))
         if max_files is not None:
             self.filenames      = self.filenames[:max_files]
@@ -15,6 +15,7 @@ class DS(Dataset):
         self.pos                = None
         self.response           = None
         self.current_file_index = None
+        self.fluctuate          = False
 
     def load_file(self, file_index):
         self.current_file_index = file_index
@@ -56,4 +57,6 @@ class DS(Dataset):
 
         pos      = np.array(list(self.pos     .row(ievt)))
         response = np.array(list(self.response.row(ievt)))
+        if self.fluctuate:
+            response = np.random.poisson(response * 1e4) / 1e4
         return (pos, response)
