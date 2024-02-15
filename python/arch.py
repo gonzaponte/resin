@@ -10,10 +10,10 @@ def register(c):
 
 @register
 class NN_linear_v0(nn.Module):
-    def __init__(self, nsipms, drop=False):
+    def __init__(self, nsipms, nout, drop=False):
         super().__init__()
-        self.layer1 = nn.Linear(nsipms, 64, dtype=torch.float64)
-        self.layer2 = nn.Linear(64    ,  2, dtype=torch.float64)
+        self.layer1 = nn.Linear(nsipms,     64, dtype=torch.float64)
+        self.layer2 = nn.Linear(64    , nout*2, dtype=torch.float64)
 
     def forward(self, x):
         x = torch.relu(self.layer1(x))
@@ -22,12 +22,12 @@ class NN_linear_v0(nn.Module):
 
 @register
 class NN_linear_v1(nn.Module):
-    def __init__(self, nsipms):
+    def __init__(self, nsipms, nout):
         super().__init__()
         nreco    = 2
-        self.layer1 = nn.Linear(nsipms, 512, dtype=torch.float64)
-        self.layer2 = nn.Linear(   512,  64, dtype=torch.float64)
-        self.layer3 = nn.Linear(    64,   2, dtype=torch.float64)
+        self.layer1 = nn.Linear(nsipms,    512, dtype=torch.float64)
+        self.layer2 = nn.Linear(   512,     64, dtype=torch.float64)
+        self.layer3 = nn.Linear(    64, nout*2, dtype=torch.float64)
 
     def forward(self, x):
         x = torch.relu(self.layer1(x))
@@ -37,11 +37,10 @@ class NN_linear_v1(nn.Module):
 
 @register
 class NN_conv_v0(nn.Module):
-    def __init__(self, nsipms):
+    def __init__(self, nsipms, nout):
         super().__init__()
         self.nsipms_side = int(nsipms**0.5)
 
-        nreco    = 2
         size     = 2**6
         self.layer1 = nn.Conv2d     (     1, size*1, 4, padding=1, dtype=torch.float64)
         self.norm1  = nn.BatchNorm2d(size*1,                       dtype=torch.float64)
@@ -49,7 +48,7 @@ class NN_conv_v0(nn.Module):
         self.norm2  = nn.BatchNorm2d(size*2,                       dtype=torch.float64)
         self.layer3 = nn.Conv2d     (size*2, size*4, 2, padding=1, dtype=torch.float64)
         self.norm3  = nn.BatchNorm2d(size*4,                       dtype=torch.float64)
-        self.layer4 = nn.Linear     (size*4,  nreco,               dtype=torch.float64)
+        self.layer4 = nn.Linear     (size*4, nout*2,               dtype=torch.float64)
 
         self.pool   = nn.MaxPool2d(2, 4)
         self.drop   = nn.Dropout(p=0.1)
@@ -67,16 +66,15 @@ class NN_conv_v0(nn.Module):
 
 @register
 class NN_conv_v1(nn.Module):
-    def __init__(self, nsipms):
+    def __init__(self, nsipms, nout):
         super().__init__()
         self.nsipms_side = int(nsipms**0.5)
-        nreco    = 2
         size     = 2**6
         self.layer1 = nn.Conv2d     (     1, size*1, 4, padding=2, dtype=torch.float64)
         self.norm1  = nn.BatchNorm2d(size*1,                       dtype=torch.float64)
         self.layer2 = nn.Conv2d     (size*1, size*2, 4, padding=2, dtype=torch.float64)
         self.norm2  = nn.BatchNorm2d(size*2,                       dtype=torch.float64)
-        self.layer3 = nn.Linear     (size*2,  nreco,               dtype=torch.float64)
+        self.layer3 = nn.Linear     (size*2, nout*2,               dtype=torch.float64)
 
         self.pool   = nn.MaxPool2d(2, 4)
 
@@ -91,11 +89,11 @@ class NN_conv_v1(nn.Module):
 
 @register
 class NN_linear_v2(nn.Module):
-    def __init__(self, nsipms):
+    def __init__(self, nsipms, nout):
         super().__init__()
-        self.layer1 = nn.Linear(nsipms, 128, dtype=torch.float64)
-        self.layer2 = nn.Linear(   128,  64, dtype=torch.float64)
-        self.layer3 = nn.Linear(    64,   2, dtype=torch.float64)
+        self.layer1 = nn.Linear(nsipms,    128, dtype=torch.float64)
+        self.layer2 = nn.Linear(   128,     64, dtype=torch.float64)
+        self.layer3 = nn.Linear(    64, nout*2, dtype=torch.float64)
 
     def forward(self, x):
         x = torch.relu(self.layer2(x))
@@ -105,15 +103,15 @@ class NN_linear_v2(nn.Module):
 
 @register
 class NN_conv_v2(nn.Module):
-    def __init__(self, nsipms):
+    def __init__(self, nsipms, nout):
         super().__init__()
         self.nsipms_side = int(nsipms**0.5)
-        self.layer1 = nn.Conv2d(     1,  16, kernel_size=3, stride=1, padding=1, dtype=torch.float64)
-        self.layer2 = nn.Conv2d(    16,  32, kernel_size=3, stride=1, padding=1, dtype=torch.float64)
-        self.layer3 = nn.Conv2d(    32,  64, kernel_size=3, stride=1, padding=1, dtype=torch.float64)
-        self.layer4 = nn.Linear(2*2*64, 128,                                     dtype=torch.float64)
-        self.layer5 = nn.Linear(   128,  64,                                     dtype=torch.float64)
-        self.layer6 = nn.Linear(    64,   2,                                     dtype=torch.float64)
+        self.layer1 = nn.Conv2d(     1,     16, kernel_size=3, stride=1, padding=1, dtype=torch.float64)
+        self.layer2 = nn.Conv2d(    16,     32, kernel_size=3, stride=1, padding=1, dtype=torch.float64)
+        self.layer3 = nn.Conv2d(    32,     64, kernel_size=3, stride=1, padding=1, dtype=torch.float64)
+        self.layer4 = nn.Linear(2*2*64,    128,                                     dtype=torch.float64)
+        self.layer5 = nn.Linear(   128,     64,                                     dtype=torch.float64)
+        self.layer6 = nn.Linear(    64, nout*2,                                     dtype=torch.float64)
         self.pool   = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 
     def forward(self, x):

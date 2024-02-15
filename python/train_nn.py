@@ -62,7 +62,7 @@ nsipms      = nsipms_side**2
 lr          = args.lr
 nepochs     = args.epochs
 NN          = args.arch
-model       = NN(nsipms)
+model       = NN(nsipms, ds.n_outputs)
 lossf       = nn.MSELoss()
 optimizer   = optim.Adam(model.parameters(), lr=lr)
 losses      = defaultdict(list)

@@ -20,6 +20,10 @@ pub struct Cli {
     #[clap(short = 'o', long, default_value = "data/test/out.parquet")]
     pub outfile: PathBuf,
 
+    /// Number of points
+    #[clap(short = 'p', long, default_value = "1")]
+    pub npoints: usize,
+
     /// Number of events per file
     #[clap(short = 'f', long, default_value = "1000")]
     pub evt_per_file: u64,
@@ -67,30 +71,46 @@ fn generate_random_position(full_width: f64) -> Point {
     Point{x, y}
 }
 
-/// Evaluates the PSF at p1 with origin at p0
-fn psf(p1: Point, p0: Point) -> f64 {
-    let dp = p1 - p0;
-    let dz2 = 5_f64.powi(2);
+/// Generates positions in the range [-half_range, half_range) in
+/// each dimension
+fn generate_random_positions(full_width: f64, n: usize) -> Vec<Point> {
+    (0..n).map(|_| generate_random_position(full_width)).collect()
+}
 
-    dz2.powf(1.5) / (dp.r2() + dz2).powf(1.5)
+/// Evaluates the PSF at p1 with origin at p0
+fn psf(p1: Point, p0s: &Vec<Point>) -> f64 {
+    p0s.iter()
+        .map(|&p0| {
+            let dp = p1 - p0;
+            let dz2 = 5_f64.powi(2);
+
+            dz2.powf(1.5) / (dp.r2() + dz2).powf(1.5)
+        })
+        .sum::<f64>() / (p0s.len() as f64)
 }
 
 /// Applies the PSF with origin at p0 to each point in sipm_pos.
 /// Points falling outside of a circle with r2=rmax2 after applying
 /// the translation trans are set to 0.
-fn apply_psf(p0: Point, sipm_pos: &Vec<Point>, trans: Point, rmax2: f64) -> Vec<f64> {
+fn apply_psf(p0s: &Vec<Point>, sipm_pos: &Vec<Point>, trans: Point, rmax2: f64) -> Vec<f64> {
     let mut response: Vec<f64> =
         sipm_pos.iter()
                 .map(|&ps| {
-                    if   (ps + trans).r2() < rmax2 { psf(ps, p0) }
+                    if   (ps + trans).r2() < rmax2 { psf(ps, p0s) }
                     else                           {      0_f64  }
                 })
                 .collect();
 
-    response.insert(0, p0.y + trans.y);
-    response.insert(0, p0.x + trans.x);
-    response.insert(0, p0.y);
-    response.insert(0, p0.x);
+    p0s.iter()
+        .for_each(|p0| {
+            response.insert(0, p0.y + trans.y);
+            response.insert(0, p0.x + trans.x);
+        });
+    p0s.iter()
+        .for_each(|p0| {
+            response.insert(0, p0.y);
+            response.insert(0, p0.x);
+        });
     response
 }
 
@@ -136,12 +156,18 @@ fn pick_ref(p: f64, rmax: f64) -> Point {
     }
 }
 
-fn get_column_names(nsipms: usize) -> Vec<String> {
-    let mut column_names = Vec::with_capacity(4 + nsipms);
-    column_names.push("x".to_string());
-    column_names.push("y".to_string());
-    column_names.push("xabs".to_string());
-    column_names.push("yabs".to_string());
+fn get_column_names(nsipms: usize, npoints: usize) -> Vec<String> {
+    let mut column_names = Vec::with_capacity(2*npoints + nsipms);
+    (0..npoints).into_iter()
+                .for_each(|i| {
+                    column_names.push(format!("x_{i}").to_string());
+                    column_names.push(format!("y_{i}").to_string());
+                });
+    (0..npoints).into_iter()
+                .for_each(|i| {
+                    column_names.push(format!("xabs_{i}").to_string());
+                    column_names.push(format!("yabs_{i}").to_string());
+                });
     (0..nsipms).into_iter()
                .map(|i| format!("sipm_{i}").to_string())
                .for_each(|name| column_names.push(name));
@@ -180,15 +206,15 @@ fn main() -> Result<(), String> {
         .build_global()
         .unwrap();
 
-    let column_names = get_column_names(nsipms*nsipms);
+    let column_names = get_column_names(nsipms*nsipms, args.npoints);
 
     (0..nbatch).into_par_iter()
         .map(|i| new_filename(&filename, i + args.file_offset))
         .map(|filename| {
             let data: Vec<Vec<f64>> =
             (0..nfile).into_iter()
-                      .map     (|_          | { (generate_random_position(pitch), pick_ref(pitch, r)) })
-                      .map     (|(pos, refp)| { apply_psf(pos, &sipm_pos, refp, r2)                   })
+                      .map     (|_          | { (generate_random_positions(pitch, args.npoints), pick_ref(pitch, r)) })
+                      .map     (|(pos, refp)| { apply_psf(&pos, &sipm_pos, refp, r2)                                 })
                       .collect();
 
             let mut df   = create_df(data, &column_names);

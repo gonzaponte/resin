@@ -19,8 +19,13 @@ class DS(Dataset):
     def load_file(self, file_index):
         self.current_file_index = file_index
         df = pl.read_parquet(self.filenames[file_index])
-        self.pos      = df.select(list("xy"))
+        self.pos      = df.select("^[xy]_\d$")
         self.response = df.select("^sipm.*$")
+
+    @property
+    def n_outputs(self):
+        _ = self.n_per_file
+        return self.pos.shape[1] // 2
 
     @property
     def n_per_file(self):
