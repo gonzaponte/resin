@@ -56,7 +56,7 @@ loader_test  = DataLoader(ds_test , batch_size=batch_size, shuffle=False)
 if args.seed:
     torch.manual_seed(args.seed)
 
-print("seed =", torch.seed())
+print("seed =", torch.initial_seed())
 nsipms_side = 16
 nsipms      = nsipms_side**2
 lr          = args.lr
@@ -118,8 +118,18 @@ normhist = lambda x, b: plt.hist(x, b, weights=np.full(len(x), 100/len(x)))
 plt.figure(figsize=(16, 12))
 plt.subplot(2, 2, 1); normhist(dxs, bins_dxy); plt.xlabel("dx (mm)"); plt.ylabel("Fraction of events (%)")
 plt.subplot(2, 2, 2); normhist(dys, bins_dxy); plt.xlabel("dy (mm)"); plt.ylabel("Fraction of events (%)")
-plt.subplot(2, 2, 3); normhist(dps, bins_dr ); plt.xlabel("dp (mm)"); plt.ylabel("Fraction of events (%)")
+plt.subplot(2, 2, 3); normhist(dps, bins_dr ); plt.xlabel(r"d$\rho$ (mm)"); plt.ylabel("Fraction of events (%)")
 plt.subplot(2, 2, 4); plt.hist2d(dxs, dys, (bins_dxy,)*2, cmin=1); plt.xlabel("x (mm)"); plt.ylabel("y (mm)")
 
 plt.tight_layout()
 plt.savefig(args.output_folder / "deltas.png")
+
+plt.figure()
+bins_r = np.linspace(0, bins_dxy.max(), 101)
+plt.hist2d(ps, dps, (bins_r, bins_dr), cmin=1)
+plt.xlabel(r"$\rho$ (mm)")
+plt.ylabel(r"d$\rho$ (mm)")
+plt.savefig(args.output_folder / "deltap_p.png")
+
+
+torch.save(model, args.output_folder / "model.nn")
